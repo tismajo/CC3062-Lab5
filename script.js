@@ -1,3 +1,4 @@
+// Mostrar en pantalla "pequeña" el contenido del blog.
 function fetchMiniBlogs(n) {
     const miniBlogsContainer = document.createElement('div');
     miniBlogsContainer.style.display = 'flex';
@@ -10,6 +11,7 @@ function fetchMiniBlogs(n) {
     for (let i = 0; i < n; i++) {
         const miniBlog = document.createElement('div');
         const detailsButton = document.createElement('button');
+        miniBlog.classList.add('blog-card'); // Se le pone una etiqueta a cada uno de los elementos para facilitar el filtrado.
 
         miniBlog.style.backgroundColor = '#ffffff';
         miniBlog.style.width = '100%';
@@ -22,6 +24,7 @@ function fetchMiniBlogs(n) {
 
         const blogText = document.createElement('p');
         blogText.innerText = `AQUÍ VA A IR LO DEL BLOG ${i + 1}`;
+        blogText.classList.add('blog-title'); // Atribuirle un id a cada título del blog para facilitar su búsqueda.
 
         detailsButton.innerText = 'Ver detalles';
         detailsButton.style.padding = '8px 12px';
@@ -41,6 +44,7 @@ function fetchMiniBlogs(n) {
     return miniBlogsContainer;
 }
 
+// Ver el blog completo.
 function showBlogDetails(blogId) {
     const overlay = document.createElement('div');
     overlay.style.position = 'fixed';
@@ -71,7 +75,7 @@ function showBlogDetails(blogId) {
     commentsSection.style.marginTop = '20px';
     commentsSection.innerHTML = `
         <h3>Comentarios</h3>
-        <textarea placeholder="Escribe tu comentario..." style="width: 100%; padding: 10px;"></textarea>
+        <textarea placeholder="Escribe tu comentario..." style="width: 100%; height: 100%; padding: 10px;"></textarea>
         <button style="margin-top: 10px; padding: 10px; background-color: #dd6ddf; color: white; border: none; border-radius: 5px; cursor: pointer;">
             Enviar
         </button>
@@ -100,6 +104,17 @@ function showBlogDetails(blogId) {
     document.body.appendChild(overlay);
 }
 
+// Filtrar por búsqueda del usuario (se usará en barra de búsqueda).
+function filterBlogs(event) {
+    const searchTerm = event.target.value.toLowerCase();
+    const blogs = document.querySelectorAll('.blog-card');
+    blogs.forEach(blog => {
+        const title = blog.querySelector('.blog-title').innerText.toLowerCase();
+        blog.style.display = title.includes(searchTerm) ? 'flex' : 'none';
+    });
+}
+
+// Barra de búsqueda
 function searchBar() {
     const searchBarContainer = document.createElement('div');
     searchBarContainer.style.display = 'flex';
@@ -115,12 +130,14 @@ function searchBar() {
     input.style.border = '1px solid #ccc';
     input.style.borderRadius = '5px';
     input.placeholder = '🔍 Buscar blog...';
+    input.addEventListener('input', filterBlogs);
 
     searchBarContainer.appendChild(input);
 
     return searchBarContainer;
 }
 
+// Pantalla principal.
 document.addEventListener('DOMContentLoaded', () => {
     document.body.style.margin = '0';
     document.body.style.height = '100vh';
