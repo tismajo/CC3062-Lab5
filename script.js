@@ -1,51 +1,76 @@
-// Mostrar en pantalla "pequeña" el contenido del blog.
-function fetchMiniBlogs(n) {
-    const miniBlogsContainer = document.createElement('div');
-    miniBlogsContainer.style.display = 'flex';
-    miniBlogsContainer.style.flexDirection = 'column';
-    miniBlogsContainer.style.gap = '10px';
-    miniBlogsContainer.style.width = '100%';
-    miniBlogsContainer.style.alignItems = 'center';
-    miniBlogsContainer.style.paddingBottom = '20px';
+// Obtener los blogs de la API de awita.site.
+function fetchBlogs() {
+    const resultsContainer = document.getElementById('results');
+    resultsContainer.innerHTML = 'Cargando blogs...';
 
-    for (let i = 0; i < n; i++) {
-        const miniBlog = document.createElement('div');
-        const detailsButton = document.createElement('button');
-        miniBlog.classList.add('blog-card'); // Se le pone una etiqueta a cada uno de los elementos para facilitar el filtrado.
+    fetch('http://awita.site:3000/posts')
+        .then(response => response.json())
+        .then(data => {
+            resultsContainer.innerHTML = '';
+            resultsContainer.style.display = 'grid';
+            resultsContainer.style.gridTemplateColumns = 'repeat(1, 1fr)';
+            resultsContainer.style.gap = '10px';
 
-        miniBlog.style.backgroundColor = '#ffffff';
-        miniBlog.style.width = '100%';
-        miniBlog.style.maxWidth = '800px';
-        miniBlog.style.padding = '20px';
-        miniBlog.style.display = 'flex';
-        miniBlog.style.alignItems = 'center';
-        miniBlog.style.justifyContent = 'space-between';
-        miniBlog.style.borderRadius = '10px';
+            data.posts.forEach(blog => {
+                const blogInfo = document.createElement('div');
+                blogInfo.classList.add('blog-card');
 
-        const blogText = document.createElement('p');
-        blogText.innerText = `AQUÍ VA A IR LO DEL BLOG ${i + 1}`;
-        blogText.classList.add('blog-title'); // Atribuirle un id a cada título del blog para facilitar su búsqueda.
+                blogInfo.style.backgroundColor = '#ffffff';
+                blogInfo.style.padding = '20px';
+                blogInfo.style.borderRadius = '10px';
+                blogInfo.style.display = 'flex';
+                blogInfo.style.flexDirection = 'column';
+                blogInfo.style.alignItems = 'center';
 
-        detailsButton.innerText = 'Ver detalles';
-        detailsButton.style.padding = '8px 12px';
-        detailsButton.style.border = 'none';
-        detailsButton.style.backgroundColor = '#dd6ddf';
-        detailsButton.style.color = 'white';
-        detailsButton.style.borderRadius = '5px';
-        detailsButton.style.cursor = 'pointer';
+                const blogTitle = document.createElement('p');
+                blogTitle.classList.add('blog-title');
+                blogTitle.innerHTML = `<strong>${blog.titulo}</strong>`;
 
-        detailsButton.addEventListener('click', () => showBlogDetails(i + 1));
+                const blogDescription = document.createElement('p');
+                blogDescription.innerText = blog.descripcion.length > 100 ? blog.descripcion.substring(0, 100) + '...' : blog.descripcion;
 
-        miniBlog.appendChild(blogText);
-        miniBlog.appendChild(detailsButton);
-        miniBlogsContainer.appendChild(miniBlog);
-    }
+                const showDetailsButton = document.createElement('button');
+                showDetailsButton.innerText = 'Ver más';
+                showDetailsButton.style.marginTop = '10px';
+                showDetailsButton.style.padding = '10px';
+                showDetailsButton.style.backgroundColor = '#008c35';
+                showDetailsButton.style.color = 'white';
+                showDetailsButton.style.border = 'none';
+                showDetailsButton.style.borderRadius = '5px';
 
-    return miniBlogsContainer;
+                showDetailsButton.addEventListener('click', () => showBlogDetails(blog));
+
+                blogInfo.appendChild(blogTitle);
+                blogInfo.appendChild(blogDescription);
+
+                if (hasImage(blog.imagen)) {
+                    const blogImage = document.createElement('img');
+                    blogImage.src = blog.imagen;
+                    blogImage.style.width = '100%';
+                    blogImage.style.maxWidth = '500px';
+                    blogImage.style.borderRadius = '10px';
+                    blogImage.style.marginTop = '10px';
+                    blogInfo.appendChild(blogImage);
+                }
+
+                blogInfo.appendChild(showDetailsButton);
+                resultsContainer.appendChild(blogInfo);
+            });
+        })
+        .catch(error => {
+            console.error('Error mostrando los blogs:', error);
+            resultsContainer.innerHTML = 'Error al cargar los blogs.';
+        });
+
+    return resultsContainer;
+}
+
+function hasImage(url) {
+    return url && (url.endsWith('.png') || url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.gif'));
 }
 
 // Ver el blog completo.
-function showBlogDetails(blogId) {
+function showBlogDetails(blog) { 
     const overlay = document.createElement('div');
     overlay.style.position = 'fixed';
     overlay.style.top = '0';
@@ -66,21 +91,20 @@ function showBlogDetails(blogId) {
     blogDetails.style.textAlign = 'center';
 
     const title = document.createElement('h2');
-    title.innerText = `Blog ${blogId}`;
+    title.innerText = blog.titulo;
 
     const content = document.createElement('p');
-    content.innerText = `Este es el contenido del blog ${blogId}.`;
+    content.innerText = blog.descripcion;
 
-    const commentsSection = document.createElement('div');
-    commentsSection.style.marginTop = '20px';
-    commentsSection.innerHTML = `
-        <h3>Comentarios</h3>
-        <textarea placeholder="Escribe tu comentario..." style="width: 100%; height: 100%; padding: 10px;"></textarea>
-        <button style="margin-top: 10px; padding: 10px; background-color: #dd6ddf; color: white; border: none; border-radius: 5px; cursor: pointer;">
-            Enviar
-        </button>
-        <div id="commentsList" style="margin-top: 10px; text-align: left;"></div>
-    `;
+    if (hasImage(blog.imagen)) {
+        const blogImage = document.createElement('img');
+        blogImage.src = blog.imagen;
+        blogImage.style.width = '100%';
+        blogImage.style.maxWidth = '500px';
+        blogImage.style.borderRadius = '10px';
+        blogImage.style.marginTop = '10px';
+        blogDetails.appendChild(blogImage);
+    }
 
     const closeButton = document.createElement('button');
     closeButton.innerText = 'Cerrar';
@@ -91,14 +115,12 @@ function showBlogDetails(blogId) {
     closeButton.style.border = 'none';
     closeButton.style.borderRadius = '5px';
     closeButton.style.cursor = 'pointer';
-
     closeButton.addEventListener('click', () => {
         document.body.removeChild(overlay);
     });
 
     blogDetails.appendChild(title);
     blogDetails.appendChild(content);
-    blogDetails.appendChild(commentsSection);
     blogDetails.appendChild(closeButton);
     overlay.appendChild(blogDetails);
     document.body.appendChild(overlay);
@@ -108,9 +130,13 @@ function showBlogDetails(blogId) {
 function filterBlogs(event) {
     const searchTerm = event.target.value.toLowerCase();
     const blogs = document.querySelectorAll('.blog-card');
+
     blogs.forEach(blog => {
-        const title = blog.querySelector('.blog-title').innerText.toLowerCase();
-        blog.style.display = title.includes(searchTerm) ? 'flex' : 'none';
+        const titleElement = blog.querySelector('.blog-title');
+        if (titleElement) {
+            const title = titleElement.innerText.toLowerCase();
+            blog.style.display = title.includes(searchTerm) ? 'flex' : 'none';
+        }
     });
 }
 
@@ -121,7 +147,7 @@ function searchBar() {
     searchBarContainer.style.justifyContent = 'center';
     searchBarContainer.style.padding = '10px';
     searchBarContainer.style.width = '100%';
-    searchBarContainer.style.backgroundColor = '#ffd6fb';
+    searchBarContainer.style.backgroundColor = '#008c35';
 
     const input = document.createElement('input');
     input.type = 'text';
@@ -154,9 +180,14 @@ document.addEventListener('DOMContentLoaded', () => {
     mainContainer.style.height = '100vh';
     mainContainer.style.width = '100%';
     mainContainer.style.overflowY = 'auto';
-    mainContainer.style.backgroundColor = '#ffd6fb';
+    mainContainer.style.backgroundColor = '#008c35';
 
     document.body.appendChild(mainContainer);
     mainContainer.appendChild(searchBar());
-    mainContainer.appendChild(fetchMiniBlogs(10));
+
+    const resultsContainer = document.createElement('div');
+    resultsContainer.id = 'results';
+    mainContainer.appendChild(resultsContainer);
+    fetchBlogs();
 });
+
