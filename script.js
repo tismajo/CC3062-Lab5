@@ -58,7 +58,6 @@ function fetchBlogs() {
             });
         })
         .catch(error => {
-            console.error('Error mostrando los blogs:', error);
             resultsContainer.innerHTML = 'Error al cargar los blogs.';
         });
 
@@ -67,6 +66,55 @@ function fetchBlogs() {
 
 function hasImage(url) {
     return url && (url.endsWith('.png') || url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.gif'));
+}
+
+// Ver los comentarios.
+function fetchComments(postId) {
+    fetch(`http://awita.site:3000/comments/${postId}`)
+    .then(response => response.json())
+        .then(data => {
+            const commentsContainer = document.getElementById('comments-container');
+            commentsContainer.innerHTML='';
+
+            data.comments.forEach(comment => {
+                const commentElement = document.createElement('div');
+                commentElement.style.padding = '10px';
+                commentElement.style.borderBottom = '1px solid #ddd';
+
+                const username = document.createElement('strong');
+                username.innerText = comment.username;
+                
+                const commentText = document.createElement('p');
+                commentText.innerText = comment.comentario;
+                
+                commentElement.appendChild(username);
+                commentElement.appendChild(commentText);
+                commentsContainer.appendChild(commentElement);
+            });
+        })
+        .catch(error => {
+            resultsContainer.innerHTML = 'Error al cargar los blogs.';
+        });}
+
+// publicar comentario.
+function postComment(postId, username, comentario) {
+    fetch('http://awita.site:3000/comment', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            post_id: postId,
+            username: username,
+            comentario: comentario
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Comentario publicado:', data);
+        fetchComments(postId); // Recargar los comentarios después de publicar
+    })
+    .catch(error => console.error('Error publicando comentario:', error));
 }
 
 // Ver el blog completo.
@@ -89,6 +137,8 @@ function showBlogDetails(blog) {
     blogDetails.style.padding = '20px';
     blogDetails.style.borderRadius = '10px';
     blogDetails.style.textAlign = 'center';
+    blogDetails.style.maxHeight = '80vh';
+    blogDetails.style.overflowY = 'auto';
 
     const title = document.createElement('h2');
     title.innerText = blog.titulo;
@@ -106,6 +156,26 @@ function showBlogDetails(blog) {
         blogDetails.appendChild(blogImage);
     }
 
+    const commentsContainer = document.createElement('div');
+    commentsContainer.id = 'comments-container';
+    commentsContainer.style.marginTop = '20px';
+    commentsContainer.style.textAlign = 'left';
+    commentsContainer.innerHTML = '<h3>Comentarios:</h3>';
+
+    const commentForm = document.createElement('form');
+    commentForm.style.marginTop = '10px';
+    commentForm.innerHTML = `
+        <input type="text" id="username" placeholder="Tu nombre" style="width: 80%; padding: 5px; margin-bottom: 5px;" required>
+        <textarea id="commentText" placeholder="Escribe tu comentario" style="width: 80%; padding: 5px; margin-bottom: 5px;" required></textarea>
+        <button type="submit" style="padding: 5px 10px; background-color: #008c35; color: white; border: none; border-radius: 5px;">Comentar</button>
+    `;
+    commentForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const comentario = document.getElementById('commentText').value;
+        postComment(blog.id, username, comentario);
+    });
+
     const closeButton = document.createElement('button');
     closeButton.innerText = 'Cerrar';
     closeButton.style.marginTop = '20px';
@@ -121,9 +191,13 @@ function showBlogDetails(blog) {
 
     blogDetails.appendChild(title);
     blogDetails.appendChild(content);
+    blogDetails.appendChild(commentForm);
+    blogDetails.appendChild(commentsContainer);
     blogDetails.appendChild(closeButton);
     overlay.appendChild(blogDetails);
     document.body.appendChild(overlay);
+
+    fetchComments(blog.id);
 }
 
 // Filtrar por búsqueda del usuario (se usará en barra de búsqueda).
@@ -190,4 +264,3 @@ document.addEventListener('DOMContentLoaded', () => {
     mainContainer.appendChild(resultsContainer);
     fetchBlogs();
 });
-
